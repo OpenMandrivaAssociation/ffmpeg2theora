@@ -1,6 +1,6 @@
 %define name ffmpeg2theora
 %define version 0.19
-%define release		%mkrel 1
+%define release		%mkrel 2
 %define build_plf 0
 %{?!mkrel:%define mkrel(c:) %{-c:0.%{-c*}.}%{!?_with_unstable:%(perl -e '$_="%{1}";m/(.*)(\\d+)$/;$rel=$2-1;re;print "$1$rel";').%{?subrel:%subrel}%{!?subrel:1}.%{?distversion:%distversion}%{?!distversion:%(echo $[%{mdkversion}/10])}}%{?_with_unstable:%{1}}%{?distsuffix:%distsuffix}%{?!distsuffix:mdk}}
 %{?_with_plf: %{expand: %%global build_plf 1}}
@@ -27,24 +27,20 @@ BuildRequires: dtsdec-devel
 
 %description
 Simple converter to create Ogg Theora files.
+
 %if %build_plf
-This version is in PLF as it violates some patents.
+This package is in PLF as it violates some patents.
 %endif
 
 %prep
-rm -rf $RPM_BUILD_ROOT
-
 %setup -q
 
 %build
-
 %configure2_5x
-
 %make
 
 %install
 rm -rf $RPM_BUILD_ROOT
-
 %{makeinstall_std}
 
 cat > $RPM_BUILD_DIR/%{name}-%{version}/README.urpmi << EOF
