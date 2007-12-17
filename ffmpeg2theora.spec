@@ -16,7 +16,6 @@ License:   GPL
 URL:       http://www.v2v.cc/~j/ffmpeg2theora/
 Group:     Video
 Source:    http://www.v2v.cc/~j/ffmpeg2theora/%{name}-%{version}.tar.bz2
-BuildRoot: %{_tmppath}/%{name}-buildroot
 BuildRequires: ffmpeg-devel >= 0.4.9-0.pre1.20060309.1mdk
 BuildRequires: libvorbis-devel
 BuildRequires: libtheora-devel
