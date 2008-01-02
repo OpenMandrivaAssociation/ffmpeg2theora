@@ -1,6 +1,6 @@
 %define name ffmpeg2theora
-%define version 0.19
-%define release		%mkrel 3
+%define version 0.20
+%define release		%mkrel 1
 %define build_plf 0
 %{?!mkrel:%define mkrel(c:) %{-c:0.%{-c*}.}%{!?_with_unstable:%(perl -e '$_="%{1}";m/(.*)(\\d+)$/;$rel=$2-1;re;print "$1$rel";').%{?subrel:%subrel}%{!?subrel:1}.%{?distversion:%distversion}%{?!distversion:%(echo $[%{mdkversion}/10])}}%{?_with_unstable:%{1}}%{?distsuffix:%distsuffix}%{?!distsuffix:mdk}}
 %{?_with_plf: %{expand: %%global build_plf 1}}
@@ -16,6 +16,7 @@ License:   GPL
 URL:       http://www.v2v.cc/~j/ffmpeg2theora/
 Group:     Video
 Source:    http://www.v2v.cc/~j/ffmpeg2theora/%{name}-%{version}.tar.bz2
+Patch: ffmpeg2theora-0.20-new-ffmpeg.patch
 BuildRoot: %{_tmppath}/%{name}-buildroot
 BuildRequires: ffmpeg-devel >= 0.4.9-0.pre1.20060309.1mdk
 BuildRequires: libvorbis-devel
@@ -34,6 +35,7 @@ This package is in PLF as it violates some patents.
 
 %prep
 %setup -q
+%patch -p1
 
 %build
 %configure2_5x
