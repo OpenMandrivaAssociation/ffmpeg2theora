@@ -1,7 +1,8 @@
 %define name ffmpeg2theora
 %define version 0.20
-%define release		%mkrel 3
+%define release		%mkrel 4
 %define build_plf 0
+%{?_with_plf: %{expand: %%global build_plf 1}}
 
 %if %build_plf
 %define distsuffix plf
