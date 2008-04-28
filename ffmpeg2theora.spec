@@ -2,11 +2,6 @@
 %define version 0.20
 %define release		%mkrel 4
 %define build_plf 0
-%{?_with_plf: %{expand: %%global build_plf 1}}
-
-%if %build_plf
-%define distsuffix plf
-%endif
 
 Name:      %{name}
 Version:   %{version}
@@ -21,17 +16,9 @@ BuildRoot: %{_tmppath}/%{name}-buildroot
 BuildRequires: ffmpeg-devel >= 0.4.9-0.pre1.20060309.1mdk
 BuildRequires: libvorbis-devel
 BuildRequires: libtheora-devel
-%if %build_plf
-BuildRequires: libfaad2-devel
-BuildRequires: dtsdec-devel
-%endif
 
 %description
 Simple converter to create Ogg Theora files.
-
-%if %build_plf
-This package is in PLF as it violates some patents.
-%endif
 
 %prep
 %setup -q
