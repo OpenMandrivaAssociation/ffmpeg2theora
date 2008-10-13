@@ -1,6 +1,6 @@
 %define name ffmpeg2theora
 %define version 0.21
-%define release		%mkrel 1
+%define release		%mkrel 2
 
 Name:      %{name}
 Version:   %{version}
