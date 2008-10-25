@@ -1,6 +1,6 @@
 %define name ffmpeg2theora
-%define version 0.21
-%define release		%mkrel 2
+%define version 0.22
+%define release		%mkrel 1
 
 Name:      %{name}
 Version:   %{version}
@@ -10,25 +10,30 @@ License:   GPLv2+
 URL:       http://www.v2v.cc/~j/ffmpeg2theora/
 Group:     Video
 Source:    http://www.v2v.cc/~j/ffmpeg2theora/%{name}-%{version}.tar.bz2
+Patch: ffmpeg2theora-0.22-pkg-config.patch
 BuildRoot: %{_tmppath}/%{name}-buildroot
 BuildRequires: ffmpeg-devel >= 0.4.9-0.pre1.20060309.1mdk
 BuildRequires: libvorbis-devel
 BuildRequires: libtheora-devel
+BuildRequires: scons
+#gw TODO, not packaged yet: 
+#BuildRequires: libkate-devel
 
 %description
 Simple converter to create Ogg Theora files.
 
 %prep
 %setup -q
+%patch -p1
 
 %build
-export CPPFLAGS="-I%_includedir/libavcodec -I%_includedir/libswscale -I%_includedir/libpostproc -I%_includedir/libavformat"
-%configure2_5x
-%make
+scons prefix=%_prefix mandir=%_mandir
 
 %install
 rm -rf $RPM_BUILD_ROOT
-%{makeinstall_std}
+scons install destdir=%buildroot prefix=%_prefix mandir=%_mandir
+install -D %name.1 %buildroot%_mandir/man1/%name.1
+
 
 cat > $RPM_BUILD_DIR/%{name}-%{version}/README.urpmi << EOF
 
