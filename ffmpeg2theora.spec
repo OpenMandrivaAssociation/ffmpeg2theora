@@ -15,8 +15,7 @@ BuildRequires: ffmpeg-devel >= 0.6
 BuildRequires: libvorbis-devel
 BuildRequires: libtheora-devel
 BuildRequires: scons
-#gw TODO, not packaged yet: 
-#BuildRequires: libkate-devel
+BuildRequires: libkate-devel
 
 %description
 Simple converter to create Ogg Theora files.
