@@ -1,6 +1,6 @@
 %define name ffmpeg2theora
-%define version 0.24
-%define release		%mkrel 2
+%define version 0.25
+%define release		%mkrel 1
 
 Name:      %{name}
 Version:   %{version}
@@ -10,9 +10,8 @@ License:   GPLv2+
 URL:       http://www.v2v.cc/~j/ffmpeg2theora/
 Group:     Video
 Source:    http://www.v2v.cc/~j/ffmpeg2theora/%{name}-%{version}.tar.bz2
-Patch: ffmpeg2theora-0.22-pkg-config.patch
 BuildRoot: %{_tmppath}/%{name}-buildroot
-BuildRequires: ffmpeg-devel >= 0.4.9-0.pre1.20060309.1mdk
+BuildRequires: ffmpeg-devel >= 0.6
 BuildRequires: libvorbis-devel
 BuildRequires: libtheora-devel
 BuildRequires: scons
@@ -24,7 +23,6 @@ Simple converter to create Ogg Theora files.
 
 %prep
 %setup -q
-%patch -p1
 
 %build
 scons prefix=%_prefix mandir=%_mandir
