@@ -1,6 +1,6 @@
 %define name ffmpeg2theora
 %define version 0.27
-%define release		%mkrel 1
+%define release		%mkrel 2
 
 Name:      %{name}
 Version:   %{version}
@@ -32,7 +32,7 @@ scons install destdir=%buildroot prefix=%_prefix mandir=%_mandir
 install -D %name.1 %buildroot%_mandir/man1/%name.1
 
 
-cat > $RPM_BUILD_DIR/%{name}-%{version}/README.urpmi << EOF
+cat > $RPM_BUILD_DIR/%{name}-%{version}/README.mdv << EOF
 
 some examples using ffmpeg2theora:
 
@@ -74,7 +74,7 @@ rm -rf %{buildroot}
 
 %files 
 %defattr(-,root,root)
-%doc COPYING ChangeLog AUTHORS README TODO README.urpmi
+%doc COPYING ChangeLog AUTHORS README TODO README.mdv
 %attr(0755,root,root) %{_bindir}/%{name}
 %_mandir/man1/%name.1*
 
