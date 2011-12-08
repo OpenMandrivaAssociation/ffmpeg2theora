@@ -32,7 +32,7 @@ scons install destdir=%buildroot prefix=%_prefix mandir=%_mandir
 install -D %name.1 %buildroot%_mandir/man1/%name.1
 
 
-cat > $RPM_BUILD_DIR/%{name}-%{version}/README.mdv << EOF
+cat > %{_builddir}/%{name}-%{version}/README.mdv << EOF
 
 some examples using ffmpeg2theora:
 
