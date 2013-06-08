@@ -20,7 +20,7 @@ Simple converter to create Ogg Theora files.
 %setup -q
 
 %build
-scons prefix=%_prefix mandir=%_mandir
+scons debug=1 prefix=%_prefix mandir=%_mandir
 
 %install
 scons install destdir=%buildroot prefix=%_prefix mandir=%_mandir
