@@ -1,10 +1,7 @@
-%define name ffmpeg2theora
-%define version 0.29
-%define release		1
 
-Name:      %{name}
-Version:   %{version}
-Release:   %{release}
+Name:      ffmpeg2theora
+Version:   0.29
+Release:   2
 Summary:   A simple converter to create Ogg Theora files
 License:   GPLv2+
 URL:       http://www.v2v.cc/~j/ffmpeg2theora/
