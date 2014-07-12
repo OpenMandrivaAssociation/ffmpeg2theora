@@ -1,34 +1,34 @@
 Summary:	A simple converter to create Ogg Theora files
 Name:		ffmpeg2theora
 Version:	0.29
-Release:	3
-License:	GPLv2+
-Group:		Video
-Url:		http://www.v2v.cc/~j/ffmpeg2theora/
+Release:	%mkrel 6
+Group:		Video/Editors and Converters
+License:	GPLv3
+URL:		http://www.v2v.cc/~j/ffmpeg2theora/
 Source0:	http://v2v.cc/~j/ffmpeg2theora/downloads/%{name}-%{version}.tar.bz2
-Patch0:		ffmpeg2theora.patch
+Patch0:		ffmpeg2theora-0.29-ffmpeg-2.0.patch
+Patch1:		ffmpeg2theora-0.29-link.patch
+BuildRequires:	ffmpeg-devel >= 0.8
+BuildRequires:	libvorbis-devel
+BuildRequires:	libtheora-devel
 BuildRequires:	scons
-BuildRequires:	ffmpeg-devel >= 0.6
-BuildRequires:	pkgconfig(kate)
-BuildRequires:	pkgconfig(theora)
-BuildRequires:	pkgconfig(vorbis)
+BuildRequires:	libkate-devel
 
 %description
 Simple converter to create Ogg Theora files.
 
 %prep
 %setup -q
-%patch0 -p1
+%apply_patches
 
 %build
-scons prefix=%{_prefix} mandir=%{_mandir}
+scons prefix=%_prefix mandir=%_mandir APPEND_LINKFLAGS="%ldflags" APPEND_CCFLAGS="%optflags"
 
 %install
-scons install destdir=%{buildroot} prefix=%{_prefix} mandir=%{_mandir}
-install -D %{name}.1 %{buildroot}%{_mandir}/man1/%{name}.1
+scons install destdir=%buildroot prefix=%_prefix mandir=%_mandir APPEND_LINKFLAGS="%ldflags" APPEND_CCFLAGS="%optflags"
+install -D %name.1 %buildroot%_mandir/man1/%name.1
 
-
-cat > %{_builddir}/%{name}-%{version}/README.mdv << EOF
+cat > %{_builddir}/%{name}-%{version}/README.omv << EOF
 
 some examples using ffmpeg2theora:
 
@@ -54,8 +54,8 @@ on linux you can use ffmpeg2theora to stream to an icecast server:
 this needs the latest icecast-kh version and a small tool to send the ogg stream to the icecast server.
 
 dvgrab --format raw - | \
-	ffmpeg2theora -a 0 -v 5 -f dv -x 320 -y 240 -o /dev/stdout - | \ 
-	oggfwd  icecastserver  8000 pwd /theora.ogg
+     ffmpeg2theora -a 0 -v 5 -f dv -x 320 -y 240 -o /dev/stdout - | \ 
+     oggfwd  icecastserver  8000 pwd /theora.ogg
 
 crop the input
 
@@ -65,8 +65,8 @@ further examples and discussion
 
 EOF
 
-%files
-%doc COPYING ChangeLog AUTHORS README TODO README.mdv
-%attr(0755,root,root) %{_bindir}/%{name}
-%{_mandir}/man1/%{name}.1*
+%files 
+%doc COPYING ChangeLog AUTHORS README TODO README.mga
+%{_bindir}/%{name}
+%_mandir/man1/%name.1*
 
