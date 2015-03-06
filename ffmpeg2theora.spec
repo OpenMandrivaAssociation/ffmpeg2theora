@@ -1,7 +1,7 @@
 Summary:	A simple converter to create Ogg Theora files
 Name:		ffmpeg2theora
 Version:	0.29
-Release:	2
+Release:	2.1
 License:	GPLv2+
 Group:		Video
 Url:		http://www.v2v.cc/~j/ffmpeg2theora/
