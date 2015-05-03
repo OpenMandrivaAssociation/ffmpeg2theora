@@ -1,0 +1,10 @@
+--- ffmpeg2theora-0.29/SConstruct~	2012-06-26 01:15:16.000000000 +0800
++++ ffmpeg2theora-0.29/SConstruct	2014-07-06 16:40:48.203960444 +0800
+@@ -208,6 +208,7 @@
+       env.Append(LIBS=['m'])
+   elif env['static']:
+       env.Append(LIBS=['m', 'dl'])
++  env.Append(LIBS=['m'])
+ 
+ 
+ env = conf.Finish()
