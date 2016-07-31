@@ -1,12 +1,11 @@
 Summary:	A simple converter to create Ogg Theora files
 Name:		ffmpeg2theora
-Version:	0.29
-Release:	8
+Version:	0.30
+Release:	1
 Group:		Video
 License:	GPLv3
 URL:		http://www.v2v.cc/~j/ffmpeg2theora/
 Source0:	http://v2v.cc/~j/ffmpeg2theora/downloads/%{name}-%{version}.tar.bz2
-Patch0:		ffmpeg2theora-0.29-ffmpeg-2.0.patch
 Patch1:		ffmpeg2theora-0.29-link.patch
 BuildRequires:	ffmpeg-devel >= 0.8
 BuildRequires:	libvorbis-devel
@@ -66,7 +65,7 @@ further examples and discussion
 EOF
 
 %files 
-%doc COPYING ChangeLog AUTHORS README TODO README.mga
+%doc COPYING ChangeLog AUTHORS README TODO README.omv
 %{_bindir}/%{name}
 %_mandir/man1/%name.1*
 
