@@ -18,7 +18,7 @@ Simple converter to create Ogg Theora files.
 
 %prep
 %setup -q
-%apply_patches
+%autopatch -p1
 
 %build
 scons prefix=%_prefix mandir=%_mandir APPEND_LINKFLAGS="%ldflags" APPEND_CCFLAGS="%optflags"
