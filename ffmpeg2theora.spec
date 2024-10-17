@@ -4,7 +4,7 @@ Version:	0.30
 Release:	1
 Group:		Video
 License:	GPLv3
-URL:		http://www.v2v.cc/~j/ffmpeg2theora/
+URL:		https://www.v2v.cc/~j/ffmpeg2theora/
 Source0:	http://v2v.cc/~j/ffmpeg2theora/downloads/%{name}-%{version}.tar.bz2
 Patch1:		ffmpeg2theora-0.29-link.patch
 BuildRequires:	ffmpeg-devel >= 0.8
