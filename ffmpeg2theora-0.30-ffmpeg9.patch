@@ -1,0 +1,783 @@
+diff -Nru a/SConstruct b/SConstruct
+--- a/SConstruct	2016-01-10 05:35:56.000000000 +0100
++++ b/SConstruct	2026-08-14 19:09:12.324573999 +0200
+@@ -21,7 +21,7 @@
+ try:
+     EnsureSConsVersion(*scons_version)
+ except TypeError:
+-    print 'SCons %d.%d.%d or greater is required, but you have an older version' % scons_version
++    print('SCons %d.%d.%d or greater is required, but you have an older version' % scons_version)
+     Exit(2)
+ 
+ opts = Variables()
+@@ -119,29 +119,29 @@
+ if not env.GetOption('clean'):
+   pkgconfig_version='0.15.0'
+   if not conf.CheckPKGConfig(pkgconfig_version): 
+-     print 'pkg-config >= %s not found.' % pkgconfig_version 
++     print('pkg-config >= %s not found.' % pkgconfig_version) 
+      Exit(1)
+ 
+   if not conf.CheckPKG("ogg >= 1.1"): 
+-    print 'ogg >= 1.1 missing'
++    print('ogg >= 1.1 missing')
+     Exit(1) 
+ 
+   if not conf.CheckPKG("vorbis"): 
+-    print 'vorbis missing'
++    print('vorbis missing')
+     Exit(1) 
+ 
+   if not conf.CheckPKG("vorbisenc"): 
+-    print 'vorbisenc missing'
++    print('vorbisenc missing')
+     Exit(1) 
+ 
+   if not conf.CheckPKG("theoraenc >= 1.1.0"): 
+-    print 'theoraenc >= 1.1.0 missing'
++    print('theoraenc >= 1.1.0 missing')
+     Exit(1) 
+ 
+   XIPH_LIBS="ogg >= 1.1 vorbis vorbisenc theoraenc >= 1.1.0"
+ 
+   if not conf.CheckPKG(XIPH_LIBS): 
+-    print 'some xiph libs are missing, ffmpeg2theora depends on %s' % XIPH_LIBS
++    print('some xiph libs are missing, ffmpeg2theora depends on %s' % XIPH_LIBS)
+     Exit(1) 
+   ParsePKGConfig(env, XIPH_LIBS)
+ 
+@@ -150,7 +150,7 @@
+       "libavformat",
+       "libavfilter",
+       "libavcodec >= 52.30.0",
+-      "libpostproc",
++
+       "libswscale",
+       "libswresample",
+       "libavutil",
+@@ -177,13 +177,13 @@
+     FFMPEG_LIBS.append('libavresample')
+ 
+   if not conf.CheckPKG(' '.join(FFMPEG_LIBS)): 
+-    print """
++    print("""
+         Could not find %s.
+         You can install it via
+          sudo apt-get install %s
+         or update PKG_CONFIG_PATH to point to ffmpeg's source folder
+         or run ./get_ffmpeg.sh (for more information see INSTALL)
+-    """ %(" ".join(FFMPEG_LIBS), " ".join(["%s-dev"%l.split()[0] for l in FFMPEG_LIBS]))
++    """ %(" ".join(FFMPEG_LIBS), " ".join(["%s-dev"%l.split()[0] for l in FFMPEG_LIBS])))
+     Exit(1) 
+ 
+   for lib in FFMPEG_LIBS:
+@@ -204,11 +204,11 @@
+       ParsePKGConfig(env, KATE_LIBS)
+       env.Append(CCFLAGS=['-DHAVE_KATE', '-DHAVE_OGGKATE'])
+     else:
+-      print """
++      print("""
+           Could not find libkate. Subtitles support will be disabled.
+           You can also run ./get_libkate.sh (for more information see INSTALL)
+           or update PKG_CONFIG_PATH to point to libkate's source folder
+-      """
++      """)
+ 
+   if conf.CheckCHeader('iconv.h'):
+       env.Append(CCFLAGS=[
+@@ -222,6 +222,7 @@
+       env.Append(LIBS=['m'])
+   elif env['static']:
+       env.Append(LIBS=['m', 'dl'])
++  env.Append(LIBS=['m'])
+ 
+ 
+ env = conf.Finish()
+diff -Nru a/src/avinfo.c b/src/avinfo.c
+--- a/src/avinfo.c	2016-01-10 05:35:56.000000000 +0100
++++ b/src/avinfo.c	2026-08-14 19:08:37.706922195 +0200
+@@ -43,7 +43,9 @@
+ #include <sys/stat.h>
+ 
+ #include "libavformat/avformat.h"
++#include "libavcodec/avcodec.h"
+ #include "libavutil/pixdesc.h"
++#include "ffmpeg9compat.h"
+ 
+ #ifndef WIN32
+ #if !defined(off64_t)
+@@ -210,13 +212,13 @@
+         if (enc->sample_rate) {
+             json_add_key_value(output, "samplerate", &enc->sample_rate, JSON_INT, 0, indent);
+         }
+-        json_add_key_value(output, "channels", &enc->channels, JSON_INT, 0, indent);
++        json_add_key_value(output, "channels", &enc->ch_layout.nb_channels, JSON_INT, 0, indent);
+ 
+         /* for PCM codecs, compute bitrate directly */
+         switch(enc->codec_id) {
+         case AV_CODEC_ID_PCM_F64BE:
+         case AV_CODEC_ID_PCM_F64LE:
+-            bitrate = enc->sample_rate * enc->channels * 64;
++            bitrate = enc->sample_rate * enc->ch_layout.nb_channels * 64;
+             break;
+         case AV_CODEC_ID_PCM_S32LE:
+         case AV_CODEC_ID_PCM_S32BE:
+@@ -224,28 +226,28 @@
+         case AV_CODEC_ID_PCM_U32BE:
+         case AV_CODEC_ID_PCM_F32BE:
+         case AV_CODEC_ID_PCM_F32LE:
+-            bitrate = enc->sample_rate * enc->channels * 32;
++            bitrate = enc->sample_rate * enc->ch_layout.nb_channels * 32;
+             break;
+         case AV_CODEC_ID_PCM_S24LE:
+         case AV_CODEC_ID_PCM_S24BE:
+         case AV_CODEC_ID_PCM_U24LE:
+         case AV_CODEC_ID_PCM_U24BE:
+         case AV_CODEC_ID_PCM_S24DAUD:
+-            bitrate = enc->sample_rate * enc->channels * 24;
++            bitrate = enc->sample_rate * enc->ch_layout.nb_channels * 24;
+             break;
+         case AV_CODEC_ID_PCM_S16LE:
+         case AV_CODEC_ID_PCM_S16BE:
+         case AV_CODEC_ID_PCM_S16LE_PLANAR:
+         case AV_CODEC_ID_PCM_U16LE:
+         case AV_CODEC_ID_PCM_U16BE:
+-            bitrate = enc->sample_rate * enc->channels * 16;
++            bitrate = enc->sample_rate * enc->ch_layout.nb_channels * 16;
+             break;
+         case AV_CODEC_ID_PCM_S8:
+         case AV_CODEC_ID_PCM_U8:
+         case AV_CODEC_ID_PCM_ALAW:
+         case AV_CODEC_ID_PCM_MULAW:
+         case AV_CODEC_ID_PCM_ZORK:
+-            bitrate = enc->sample_rate * enc->channels * 8;
++            bitrate = enc->sample_rate * enc->ch_layout.nb_channels * 8;
+             break;
+         default:
+             bitrate = enc->bit_rate;
+@@ -355,14 +357,15 @@
+     if (first)
+         _first = 1;
+ 
+-    if(st->codec->codec_type == type_filter){
++    if(st->codecpar->codec_type == type_filter){
+         if (!_first)
+             fprintf(output, ", ");
+         _first = 0;
+         fprintf(output, "{\n");
+ 
+-        json_codec_info(output, st->codec, indent + 1);
+-        if(st->codec->codec_type == AVMEDIA_TYPE_VIDEO){
++        AVCodecContext *tmp = ff2t_alloc_ctx(st);
++        json_codec_info(output, tmp, indent + 1);
++        if(st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO){
+             if (st->time_base.den && st->time_base.num && av_q2d(st->time_base) > 0.001) {
+                 snprintf(buf1, sizeof(buf1), "%d:%d",
+                          st->time_base.den, st->time_base.num);
+@@ -373,11 +376,11 @@
+                 json_add_key_value(output, "framerate", buf1, JSON_STRING, 0, indent + 1);
+             }
+             if (st->sample_aspect_ratio.num && // default
+-                av_cmp_q(st->sample_aspect_ratio, st->codec->sample_aspect_ratio)) {
++                av_cmp_q(st->sample_aspect_ratio, tmp->sample_aspect_ratio)) {
+                 AVRational display_aspect_ratio;
+                 av_reduce(&display_aspect_ratio.num, &display_aspect_ratio.den,
+-                          st->codec->width*st->sample_aspect_ratio.num,
+-                          st->codec->height*st->sample_aspect_ratio.den,
++                          tmp->width*st->sample_aspect_ratio.num,
++                          tmp->height*st->sample_aspect_ratio.den,
+                           1024*1024);
+                 snprintf(buf1, sizeof(buf1), "%d:%d",
+                          st->sample_aspect_ratio.num, st->sample_aspect_ratio.den);
+@@ -389,6 +392,7 @@
+         }
+         json_metadata(output, st->metadata, indent + 1);
+         json_add_key_value(output, "id", &i, JSON_INT, 1, indent + 1);
++        avcodec_free_context(&tmp);
+         do_indent(output, indent-1);
+         fprintf(output, "}");
+     }
+@@ -513,8 +517,7 @@
+     AVFormatContext *context = NULL;
+     FILE* output = stdout;
+     
+-    avcodec_register_all();
+-    av_register_all();
++
+ 
+     if(argc == 1) {
+         fprintf(stderr, "usage: %s avfile [outputfile]\n", argv[0]);
+diff -Nru a/src/ffmpeg2theora.c b/src/ffmpeg2theora.c
+--- a/src/ffmpeg2theora.c	2016-01-10 05:35:56.000000000 +0100
++++ b/src/ffmpeg2theora.c	2026-08-14 19:07:32.835588574 +0200
+@@ -32,12 +32,13 @@
+ #include "libavformat/framehook.h"
+ #endif
+ #include "libswscale/swscale.h"
+-#include "libpostproc/postprocess.h"
++#include "libavutil/pixdesc.h"
+ 
+ #include "libavutil/opt.h"
+ #include "libavutil/channel_layout.h"
+ #include "libavutil/samplefmt.h"
+ #include "libswresample_compat.h"
++#include "ffmpeg9compat.h"
+ 
+ #include "theora/theoraenc.h"
+ #include "vorbis/codec.h"
+@@ -152,13 +153,13 @@
+     picture = av_frame_alloc();
+     if (!picture)
+         return NULL;
+-    size = avpicture_get_size (pix_fmt, width, height);
++    size = ff2t_picture_get_size (pix_fmt, width, height);
+     picture_buf = av_malloc (size);
+     if (!picture_buf) {
+         av_frame_free (&picture);
+         return NULL;
+     }
+-    avpicture_fill((AVPicture *) picture, picture_buf, pix_fmt, width, height);
++    ff2t_picture_fill(picture, picture_buf, pix_fmt, width, height);
+     return picture;
+ }
+ 
+@@ -167,7 +168,7 @@
+  */
+ static void frame_dealloc(AVFrame *frame) {
+     if (frame) {
+-        avpicture_free((AVPicture*)frame);
++        ff2t_picture_free(frame);
+         av_frame_free(&frame);
+     }
+ }
+@@ -353,7 +354,7 @@
+ 
+ static const char *find_category_for_subtitle_stream (ff2theora this, int idx, int included_subtitles)
+ {
+-  AVCodecContext *enc = this->context->streams[idx]->codec;
++  AVCodecParameters *enc = this->context->streams[idx]->codecpar;
+   if (enc->codec_type != AVMEDIA_TYPE_SUBTITLE) return 0;
+   switch (enc->codec_id) {
+     case AV_CODEC_ID_TEXT:
+@@ -562,7 +563,7 @@
+     return 0;
+ }
+ 
+-static int process_filter_graph(ff2theora this, AVPicture *dst, const AVPicture *src,
++static int process_filter_graph(ff2theora this, AVFrame *dst, const AVFrame *src,
+                                 enum AVPixelFormat pixfmt, int width, int height) {
+     int res;
+ 
+@@ -584,7 +585,7 @@
+     res = av_buffersink_get_frame(this->buffersink_ctx, this->filter_frame);
+     if (res < 0)
+         return res;
+-    av_picture_copy(dst, (const AVPicture *) this->filter_frame, pixfmt, width, height);
++    ff2t_picture_copy(dst, this->filter_frame, pixfmt, width, height);
+     av_frame_unref(this->filter_frame);
+ 
+     return 0;
+@@ -597,10 +598,8 @@
+     int venc_pix_fmt = 0;
+     AVStream *astream = NULL;
+     AVStream *vstream = NULL;
+-    AVCodec *acodec = NULL;
+-    AVCodec *vcodec = NULL;
+-    pp_mode *ppMode = NULL;
+-    pp_context *ppContext = NULL;
++    const AVCodec *acodec = NULL;
++    const AVCodec *vcodec = NULL;
+     int sws_flags = this->resize_method;
+     float frame_aspect = 0;
+     double fps = 0.0;
+@@ -617,8 +616,7 @@
+     int src_nb_samples = 1024, dst_nb_samples, max_dst_nb_samples;
+ 
+     if (this->audiostream >= 0 && this->context->nb_streams > this->audiostream) {
+-        AVCodecContext *enc = this->context->streams[this->audiostream]->codec;
+-        if (enc->codec_type == AVMEDIA_TYPE_AUDIO) {
++        if (this->context->streams[this->audiostream]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+             this->audio_index = this->audiostream;
+             fprintf(stderr, "  Using stream #0.%d as audio input\n",this->audio_index);
+         }
+@@ -627,8 +625,7 @@
+         }
+     }
+     if (this->videostream >= 0 && this->context->nb_streams > this->videostream) {
+-        AVCodecContext *enc = this->context->streams[this->videostream]->codec;
+-        if (enc->codec_type == AVMEDIA_TYPE_VIDEO) {
++        if (this->context->streams[this->videostream]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+             this->video_index = this->videostream;
+             fprintf(stderr, "  Using stream #0.%d as video input\n",this->video_index);
+         }
+@@ -638,8 +635,7 @@
+     }
+ 
+     for (i = 0; i < this->context->nb_streams; i++) {
+-        AVCodecContext *enc = this->context->streams[i]->codec;
+-        switch (enc->codec_type) {
++        switch (this->context->streams[i]->codecpar->codec_type) {
+             case AVMEDIA_TYPE_VIDEO:
+                 if (this->video_index < 0 && !this->disable_video)
+                     this->video_index = i;
+@@ -655,8 +651,8 @@
+ 
+     if (this->video_index >= 0) {
+         vstream = this->context->streams[this->video_index];
+-        venc = vstream->codec;
+-        vcodec = avcodec_find_decoder (venc->codec_id);
++        venc = ff2t_alloc_ctx(vstream);
++        vcodec = avcodec_find_decoder (vstream->codecpar->codec_id);
+ 
+         display_width = venc->width;
+         display_height = venc->height;
+@@ -669,8 +665,7 @@
+             vstream_fps.num = vstream->time_base.den;
+             vstream_fps.den = vstream->time_base.num;
+         } else {
+-            vstream_fps.num = venc->time_base.den;
+-            vstream_fps.den = venc->time_base.num * venc->ticks_per_frame;
++            vstream_fps = vstream->avg_frame_rate.num ? vstream->avg_frame_rate : vstream->r_frame_rate;
+         }
+         if (av_q2d(vstream->avg_frame_rate) < av_q2d(vstream_fps)) {
+             vstream_fps = vstream->avg_frame_rate;
+@@ -686,7 +681,7 @@
+         fprintf(stderr, "FPS1(stream): %f\n", 1/av_q2d(vstream->time_base));
+         fprintf(stderr, "FPS2(stream.r_frame_rate): %f\n", av_q2d(vstream->r_frame_rate));
+         fprintf(stderr, "FPS3(codec): %f\n", 1/av_q2d(venc->time_base));
+-        fprintf(stderr, "ticks per frame: %i\n", venc->ticks_per_frame);
++        fprintf(stderr, "ticks per frame: n/a\n");
+         fprintf(stderr, "FPS used: %f\n", fps);
+ #endif
+         if (this->picture_height==0 &&
+@@ -945,10 +940,8 @@
+             fprintf(stderr, "  Deinterlace: off\n");
+ 
+         if (strcmp(this->pp_mode, "")) {
+-            ppContext = pp_get_context(display_width, display_height, PP_FORMAT_420);
+-            ppMode = pp_get_mode_by_name_and_quality(this->pp_mode, PP_QUALITY_MAX);
+             if(!(info.twopass==3 && info.passno==2) && !info.frontend)
+-                fprintf(stderr, "  Postprocessing: %s\n", this->pp_mode);
++                fprintf(stderr, "  Postprocessing requested but libpostproc is gone in FFmpeg 9\n");
+         }
+ 
+         if (venc->color_primaries == AVCOL_PRI_BT470M)
+@@ -1021,11 +1014,11 @@
+     }
+     if (this->audio_index >= 0) {
+         astream = this->context->streams[this->audio_index];
+-        aenc = this->context->streams[this->audio_index]->codec;
+-        acodec = avcodec_find_decoder (aenc->codec_id);
++        aenc = ff2t_alloc_ctx(astream);
++        acodec = avcodec_find_decoder (astream->codecpar->codec_id);
+         int sample_rate = aenc->sample_rate;
+         if (this->channels < 1) {
+-            this->channels = aenc->channels;
++            this->channels = aenc->ch_layout.nb_channels;
+         }
+         if (this->sample_rate==-1) {
+             this->sample_rate = aenc->sample_rate;
+@@ -1034,25 +1027,24 @@
+         if (this->no_upscaling) {
+             if (this->sample_rate > aenc->sample_rate)
+                 this->sample_rate = aenc->sample_rate;
+-            if (this->channels > aenc->channels)
+-                this->channels = aenc->channels;
++            if (this->channels > aenc->ch_layout.nb_channels)
++                this->channels = aenc->ch_layout.nb_channels;
+         }
+         aenc->thread_count = 1;
+         if (acodec != NULL && avcodec_open2 (aenc, acodec, NULL) >= 0) {
+             if (this->sample_rate != sample_rate
+-                || this->channels != aenc->channels
++                || this->channels != aenc->ch_layout.nb_channels
+                 || aenc->sample_fmt != AV_SAMPLE_FMT_FLTP) {
++                AVChannelLayout out_ch = {0};
+                 swr_ctx = swr_alloc();
+                 /* set options */
+-                if (aenc->channel_layout) {
+-                    av_opt_set_int(swr_ctx, "in_channel_layout",    aenc->channel_layout, 0);
+-                } else {
+-                    av_opt_set_int(swr_ctx, "in_channel_layout", av_get_default_channel_layout(aenc->channels), 0);
+-                }
++                av_opt_set_chlayout(swr_ctx, "in_chlayout", &aenc->ch_layout, 0);
+                 av_opt_set_int(swr_ctx, "in_sample_rate",       aenc->sample_rate, 0);
+                 av_opt_set_int(swr_ctx, "in_sample_fmt", aenc->sample_fmt, 0);
+ 
+-                av_opt_set_int(swr_ctx, "out_channel_layout", av_get_default_channel_layout(this->channels), 0);
++                av_channel_layout_default(&out_ch, this->channels);
++                av_opt_set_chlayout(swr_ctx, "out_chlayout", &out_ch, 0);
++                av_channel_layout_uninit(&out_ch);
+                 av_opt_set_int(swr_ctx, "out_sample_rate",       this->sample_rate, 0);
+                 av_opt_set_int(swr_ctx, "out_sample_fmt", AV_SAMPLE_FMT_FLTP, 0);
+ 
+@@ -1073,8 +1065,8 @@
+ 
+                 if (!info.frontend && this->sample_rate!=sample_rate)
+                     fprintf(stderr, "  Resample: %dHz => %dHz\n", sample_rate,this->sample_rate);
+-                if (!info.frontend && this->channels!=aenc->channels)
+-                    fprintf(stderr, "  Channels: %d => %d\n",aenc->channels,this->channels);
++                if (!info.frontend && this->channels!=aenc->ch_layout.nb_channels)
++                    fprintf(stderr, "  Channels: %d => %d\n",aenc->ch_layout.nb_channels,this->channels);
+             }
+             else{
+                 swr_ctx = NULL;
+@@ -1092,11 +1084,11 @@
+ #ifdef HAVE_KATE
+         if (this->included_subtitles) {
+           AVStream *stream = this->context->streams[i];
+-          AVCodecContext *enc = stream->codec;
++          AVCodecContext *enc = ff2t_alloc_ctx(stream);
+           const char *category;
+-          if (enc->codec_type == AVMEDIA_TYPE_SUBTITLE) {
+-            AVCodec *codec = avcodec_find_decoder (enc->codec_id);
+-            if (codec && avcodec_open2 (enc, codec, NULL) >= 0) {
++          if (stream->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE) {
++            const AVCodec *codec = avcodec_find_decoder (stream->codecpar->codec_id);
++            if (enc && codec && avcodec_open2 (enc, codec, NULL) >= 0) {
+               subtitles_opened[i] = 1;
+             }
+             category = find_category_for_subtitle_stream(this, i, this->included_subtitles);
+@@ -1446,7 +1438,7 @@
+             fprintf(stderr, "Failed to allocate memory\n");
+             exit(1);
+         }
+-        av_init_packet(&avpkt);
++        memset(&avpkt, 0, sizeof(avpkt));
+ 
+         /* main decoding loop */
+         do{
+@@ -1473,9 +1465,9 @@
+                       first frame decodec in case its not a keyframe
+                     */
+                     if (pkt.stream_index == this->video_index) {
+-                      avcodec_decode_video2(venc, frame, &got_frame, &pkt);
++                      ff2t_decode_video(venc, frame, &got_frame, &pkt);
+                     }
+-                    av_free_packet (&pkt);
++                    av_packet_unref (&pkt);
+                     continue;
+                 }
+             }
+@@ -1492,7 +1484,7 @@
+                 while(video_eos || avpkt.size > 0) {
+                     int dups = 0;
+                     static th_ycbcr_buffer ycbcr;
+-                    len1 = avcodec_decode_video2(venc, frame, &got_frame, &avpkt);
++                    len1 = ff2t_decode_video(venc, frame, &got_frame, &avpkt);
+                     if (len1>=0) {
+                         if (got_frame) {
+                             // this is disabled by default since it does not work
+@@ -1535,39 +1527,34 @@
+                                 output_tmp->data, output_tmp->linesize);
+                             }
+                             else{
+-                                av_picture_copy((AVPicture *)output_tmp, (AVPicture *)frame, this->pix_fmt,
++                                ff2t_picture_copy(output_tmp, frame, this->pix_fmt,
+                                                 display_width, display_height);
+                                 output_tmp_p=NULL;
+                             }
+-                            if ((this->deinterlace==0 && frame->interlaced_frame) ||
++                            if ((this->deinterlace==0 && (frame->flags & AV_FRAME_FLAG_INTERLACED)) ||
+                                 this->deinterlace==1) {
+ 
+-                                if (process_filter_graph(this, (AVPicture *)output,(AVPicture *)output_tmp,this->pix_fmt,display_width,display_height)<0) {
++                                if (process_filter_graph(this, output, output_tmp,this->pix_fmt,display_width,display_height)<0) {
+                                         fprintf(stderr, "Deinterlace failed.\n");
+                                         exit(1);
+                                 }
+                             }
+                             else
+                             {
+-                                av_picture_copy((AVPicture *)output, (AVPicture *)output_tmp, this->pix_fmt,
++                                ff2t_picture_copy(output, output_tmp, this->pix_fmt,
+                                                 display_width, display_height);
+                             }
+                             // now output
+ 
+-                            if (ppMode)
+-                                pp_postprocess((const uint8_t **)output->data, output->linesize,
+-                                               output->data, output->linesize,
+-                                               display_width, display_height,
+-                                               output->qscale_table, output->qstride,
+-                                               ppMode, ppContext, this->pix_fmt);
++                            /* libpostproc was dropped from FFmpeg 9 */
+ #ifdef HAVE_FRAMEHOOK
+                             if (this->vhook)
+                                 frame_hook_process((AVPicture *)output, this->pix_fmt, display_width,display_height, 0);
+ #endif
+ 
+                             if (this->frame_topBand || this->frame_leftBand) {
+-                                if (av_picture_crop((AVPicture *)output_cropped,
+-                                                  (AVPicture *)output, this->pix_fmt,
++                                if (ff2t_picture_crop(output_cropped,
++                                                  output, this->pix_fmt,
+                                                   this->frame_topBand, this->frame_leftBand) < 0) {
+                                     av_log(NULL, AV_LOG_ERROR, "error cropping picture\n");
+                                 }
+@@ -1587,8 +1574,8 @@
+                                 output_resized = output_cropped;
+                             }
+                             if ((this->frame_width!=this->picture_width) || (this->frame_height!=this->picture_height)) {
+-                                if (av_picture_pad((AVPicture *)output_padded,
+-                                                 (AVPicture *)output_resized,
++                                if (ff2t_picture_pad(output_padded,
++                                                 output_resized,
+                                                  this->frame_height, this->frame_width, this->pix_fmt,
+                                                  this->frame_y_offset, this->frame_y_offset,
+                                                  this->frame_x_offset, this->frame_x_offset,
+@@ -1627,7 +1614,7 @@
+                     }
+                     if (got_frame) {
+                         first=0;
+-                        av_picture_copy((AVPicture *)output_buffered, (AVPicture *)output_padded, this->pix_fmt, this->frame_width, this->frame_height);
++                        ff2t_picture_copy(output_buffered, output_padded, this->pix_fmt, this->frame_width, this->frame_height);
+                     }
+                     if (!got_frame) {
+                         break;
+@@ -1640,7 +1627,7 @@
+                     int bytes_per_sample = av_get_bytes_per_sample(aenc->sample_fmt);
+ 
+                     if (avpkt.size > 0) {
+-                        len1 = avcodec_decode_audio4(astream->codec, audio_frame, &got_frame, &avpkt);
++                        len1 = ff2t_decode_audio(aenc, audio_frame, &got_frame, &avpkt);
+                         if (len1 < 0) {
+                             /* if error, we skip the frame */
+                             break;
+@@ -1701,7 +1688,7 @@
+             if (info.passno!=1)
+             if (this->included_subtitles && subtitles_enabled[pkt.stream_index] && is_supported_subtitle_stream(this, pkt.stream_index, this->included_subtitles)) {
+               AVStream *stream=this->context->streams[pkt.stream_index];
+-              AVCodecContext *enc = stream->codec;
++              AVCodecContext *enc = ff2t_alloc_ctx(stream);
+               if (enc) {
+                 char *allocated_utf8 = NULL;
+                 const char *utf8 = NULL;
+@@ -1843,7 +1830,7 @@
+             /* flush out the file */
+             oggmux_flush (&info, video_eos + audio_eos);
+ 
+-            av_free_packet (&pkt);
++            av_packet_unref (&pkt);
+         } while (ret >= 0 && !(audio_done && video_done));
+ 
+         if (info.passno != 1) {
+@@ -1861,20 +1848,19 @@
+           if (this->included_subtitles) {
+             for (i = 0; i < this->context->nb_streams; i++) {
+               if (subtitles_opened[i]) {
+-                AVCodecContext *enc = this->context->streams[i]->codec;
+-                if (enc) avcodec_close(enc);
++                /* decoder contexts are freed below */
+               }
+             }
+           }
+         }
+ 
+         if (this->video_index >= 0) {
+-            avcodec_close(venc);
++            avcodec_free_context(&venc);
+         }
+         if (this->audio_index >= 0) {
+             if (swr_ctx)
+                 swr_free(&swr_ctx);
+-            avcodec_close(aenc);
++            avcodec_free_context(&aenc);
+         }
+ 
+         /* Write the index out to disk. */
+@@ -1884,8 +1870,6 @@
+ 
+         av_frame_free(&audio_frame);
+         oggmux_close(&info);
+-        if (ppContext)
+-            pp_free_context(ppContext);
+         if (!info.audio_only) {
+             av_frame_free(&frame_p);
+             frame_dealloc(output_p);
+@@ -2418,9 +2402,7 @@
+     FILE *fpid = NULL;
+ 
+     ff2theora convert = ff2theora_init();
+-    avcodec_register_all();
+     avdevice_register_all();
+-    av_register_all();
+ 
+     if (argc == 1) {
+         print_usage();
+@@ -2490,7 +2472,7 @@
+                             break;
+                         case PP_FLAG:
+                             if (!strcmp(optarg, "help")) {
+-                                fprintf(stdout, "%s", pp_help);
++                                fprintf(stdout, "libpostproc is not available with FFmpeg 9\n");
+                                 exit(1);
+                             }
+                             snprintf(convert->pp_mode,sizeof(convert->pp_mode),"%s",optarg);
+@@ -2983,8 +2965,7 @@
+                     /* work out the stream types the output will hold */
+                     int has_video = 0, has_audio = 0, has_kate = 0, has_skeleton = 0;
+                     for (i = 0; i < convert->context->nb_streams; i++) {
+-                        AVCodecContext *enc = convert->context->streams[i]->codec;
+-                        switch (enc->codec_type) {
++                        switch (convert->context->streams[i]->codecpar->codec_type) {
+                             case AVMEDIA_TYPE_VIDEO: has_video = 1; break;
+                             case AVMEDIA_TYPE_AUDIO: has_audio = 1; break;
+                             case AVMEDIA_TYPE_SUBTITLE: if (is_supported_subtitle_stream(convert, i, convert->included_subtitles)) has_kate = 1; break;
+diff -Nru a/src/ffmpeg9compat.h b/src/ffmpeg9compat.h
+--- a/src/ffmpeg9compat.h	1970-01-01 01:00:00.000000000 +0100
++++ b/src/ffmpeg9compat.h	2026-08-14 19:06:29.691438916 +0200
+@@ -0,0 +1,124 @@
++/* FFmpeg 5-9 compatibility for abandoned ffmpeg2theora 0.30 */
++#ifndef FF2THEORA_FFMPEG9_H
++#define FF2THEORA_FFMPEG9_H
++
++#include <string.h>
++#include <libavcodec/avcodec.h>
++#include <libavformat/avformat.h>
++#include <libavutil/imgutils.h>
++#include <libavutil/channel_layout.h>
++#include <libavutil/frame.h>
++#include <libavutil/mem.h>
++#include <libavutil/pixdesc.h>
++#include <libavutil/pixfmt.h>
++
++#ifndef AVPicture
++typedef struct AVFrame AVPicture;
++#endif
++
++static inline int ff2t_picture_get_size(int pix_fmt, int w, int h)
++{
++	return av_image_get_buffer_size((enum AVPixelFormat)pix_fmt, w, h, 1);
++}
++
++static inline int ff2t_picture_fill(AVFrame *pic, uint8_t *ptr, int pix_fmt, int w, int h)
++{
++	return av_image_fill_arrays(pic->data, pic->linesize, ptr,
++				    (enum AVPixelFormat)pix_fmt, w, h, 1);
++}
++
++static inline void ff2t_picture_free(AVFrame *pic)
++{
++	av_freep(&pic->data[0]);
++}
++
++static inline void ff2t_picture_copy(AVFrame *dst, const AVFrame *src, int pix_fmt, int w, int h)
++{
++	av_image_copy(dst->data, dst->linesize,
++		      (const uint8_t * const *)src->data, src->linesize,
++		      (enum AVPixelFormat)pix_fmt, w, h);
++}
++
++static inline int ff2t_picture_crop(AVFrame *dst, const AVFrame *src,
++				    int pix_fmt, int top, int left)
++{
++	const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get((enum AVPixelFormat)pix_fmt);
++	int i;
++	if (!desc)
++		return -1;
++	for (i = 0; i < 4; i++) {
++		int hshift = (i == 1 || i == 2) ? desc->log2_chroma_w : 0;
++		int vshift = (i == 1 || i == 2) ? desc->log2_chroma_h : 0;
++		if (!src->data[i]) {
++			dst->data[i] = NULL;
++			dst->linesize[i] = 0;
++			continue;
++		}
++		dst->data[i] = src->data[i]
++			+ (src->linesize[i] * (top >> vshift))
++			+ ((left >> hshift) * ((desc->comp[i].depth + 7) / 8));
++		dst->linesize[i] = src->linesize[i];
++	}
++	return 0;
++}
++
++static inline int ff2t_picture_pad(AVFrame *dst, const AVFrame *src,
++				   int height, int width, int pix_fmt,
++				   int padtop, int padbottom, int padleft, int padright,
++				   int *color)
++{
++	(void)padbottom;
++	(void)padright;
++	(void)color;
++	int size = av_image_get_buffer_size((enum AVPixelFormat)pix_fmt, width, height, 1);
++	if (size < 0)
++		return size;
++	if (dst->data[0])
++		memset(dst->data[0], 0, size);
++	av_image_copy(dst->data, dst->linesize,
++		      (const uint8_t * const *)src->data, src->linesize,
++		      (enum AVPixelFormat)pix_fmt,
++		      width - padleft, height - padtop);
++	return 0;
++}
++
++static inline int ff2t_decode_video(AVCodecContext *avctx, AVFrame *frame,
++				    int *got_frame, AVPacket *pkt)
++{
++	int ret;
++	*got_frame = 0;
++	ret = avcodec_send_packet(avctx, pkt);
++	if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
++		return ret;
++	ret = avcodec_receive_frame(avctx, frame);
++	if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
++		return 0;
++	if (ret < 0)
++		return ret;
++	*got_frame = 1;
++	return pkt ? pkt->size : 0;
++}
++
++static inline int ff2t_decode_audio(AVCodecContext *avctx, AVFrame *frame,
++				    int *got_frame, AVPacket *pkt)
++{
++	return ff2t_decode_video(avctx, frame, got_frame, pkt);
++}
++
++static inline AVCodecContext *ff2t_alloc_ctx(AVStream *st)
++{
++	const AVCodec *codec = avcodec_find_decoder(st->codecpar->codec_id);
++	AVCodecContext *ctx = avcodec_alloc_context3(codec);
++	if (!ctx)
++		return NULL;
++	if (avcodec_parameters_to_context(ctx, st->codecpar) < 0) {
++		avcodec_free_context(&ctx);
++		return NULL;
++	}
++	return ctx;
++}
++
++#define av_register_all() do { } while (0)
++#define avcodec_register_all() do { } while (0)
++
++#endif
+diff -Nru a/src/subtitles.c b/src/subtitles.c
+--- a/src/subtitles.c	2016-01-10 05:35:56.000000000 +0100
++++ b/src/subtitles.c	2026-08-14 19:08:59.540822194 +0200
+@@ -30,6 +30,7 @@
+ #endif
+ 
+ #include "libavformat/avformat.h"
++#include "libavcodec/avcodec.h"
+ 
+ #ifdef WIN32
+ #include "fcntl.h"
+@@ -603,7 +604,7 @@
+         warn(frontend, NULL, 0, "Out of memory");
+         return -1;
+       }
+-      const uint32_t *pal = (const uint32_t*)sr->pict.data[1];
++      const uint32_t *pal = (const uint32_t*)sr->data[1];
+       for (c=0; c<subtitle->kp.ncolors; ++c) {
+         subtitle->kp.colors[c].a = (pal[c]>>24)&0xff;
+         subtitle->kp.colors[c].r = (pal[c]>>16)&0xff;
+@@ -625,7 +626,7 @@
+       }
+ 
+       /* Not quite sure if the AVPicture line data is supposed to always be packed */
+-      memcpy(subtitle->kb.pixels,sr->pict.data[0],sr->w*sr->h);
++      memcpy(subtitle->kb.pixels,sr->data[0],sr->w*sr->h);
+ 
+       subtitle->text = NULL;
+       subtitle->t0 = t;
